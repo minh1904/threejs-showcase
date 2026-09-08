@@ -43,7 +43,22 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - `WebGLRenderer` — `setSize`, `setPixelRatio`, gắn `domElement` vào DOM
 - Vòng đời: tạo → render → **dọn dẹp** (`renderer.dispose()`, remove canvas) khi unmount
 
-**Bài tập:** ⬜ *(sẽ cập nhật)*
+**Bài tập:**
+
+Dựng scene đầu tiên: một khối hộp màu, render đúng **một** khung hình (chưa cần animation).
+
+1. Tạo `Scene`, `PerspectiveCamera`, `WebGLRenderer`, gắn canvas vào DOM trong `useEffect`
+2. Thêm một `Mesh` khối hộp với `MeshBasicMaterial` (chọn Basic vì bài này chưa có đèn)
+3. Gọi `renderer.render(scene, camera)` một lần
+4. Cleanup: xoá canvas và gọi `renderer.dispose()` khi unmount
+
+**Thử phá cho hiểu** — làm từng cái rồi quan sát:
+- Đặt `camera.position.z = 0` → vì sao mất hình?
+- Đổi `near` thành `0.0001` và `far` thành `1000000`, đặt hai mặt phẳng sát nhau → quan sát **z-fighting** (bề mặt nhấp nháy)
+- Bỏ dòng `renderer.setSize()` → canvas ra kích thước gì?
+- Đổi `fov` từ 75 xuống 20 rồi lên 120 → cảm nhận khác biệt
+
+**Xong khi:** khối hộp hiện ra, và bạn giải thích được **từng dòng** làm gì mà không cần nhìn lại tài liệu.
 
 **Ghi chú của tôi:** *(để trống — tự điền khi học)*
 
@@ -60,7 +75,15 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - `BufferGeometry` — dữ liệu đỉnh thật sự nằm ở đâu (`position` attribute là `Float32Array`)
 - `wireframe: true` để nhìn thấy lưới tam giác
 
-**Bài tập:** ⬜
+**Bài tập:**
+
+1. Xếp hàng ngang 5 geometry khác nhau: `Box`, `Sphere`, `Torus`, `Plane`, `Cone`
+2. Bật `wireframe: true` cho tất cả để nhìn thấy lưới tam giác
+3. Với `SphereGeometry`, thử `widthSegments`/`heightSegments` lần lượt là `(3, 2)`, `(8, 6)`, `(64, 32)` — đặt cạnh nhau để so sánh
+4. `console.log(geometry.attributes.position.count)` cho từng cái → ghi lại số đỉnh
+5. **Tự tạo một tam giác bằng `BufferGeometry` thuần**: khai báo `Float32Array` chứa 9 số (3 đỉnh × 3 toạ độ), gán vào attribute `position`
+
+**Xong khi:** giải thích được vì sao `SphereGeometry(1, 3, 2)` trông như viên kim cương chứ không phải hình cầu, và nói được mối quan hệ giữa số segment ↔ số tam giác ↔ chi phí hiệu năng.
 
 **Ghi chú của tôi:**
 
@@ -77,7 +100,19 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - Quaternion là gì và vì sao tồn tại (gimbal lock) — biết khái niệm, chưa cần dùng sâu
 - `lookAt()`
 
-**Bài tập:** ⬜
+**Bài tập — hệ mặt trời mini** *(dùng lại cho các bài 1.4 → 1.6, nên làm cẩn thận)*
+
+1. Mặt trời ở gốc toạ độ
+2. Trái đất cách mặt trời một khoảng
+3. Mặt trăng quay quanh trái đất
+4. Dùng `Group` sao cho khi trái đất di chuyển thì **mặt trăng tự động đi theo**, không phải tự tính toạ độ
+
+**Thử phá cho hiểu:**
+- Bỏ mặt trăng ra khỏi group của trái đất, đặt thẳng vào `scene` → di chuyển trái đất → mặt trăng đứng im. Đây chính là điểm mấu chốt của scene graph.
+- Đặt `scale` cho group cha → quan sát con bị scale theo
+- Dùng `rotation.y = 90` (nhầm đơn vị độ) rồi sửa thành `Math.PI / 2` → thấy sự khác biệt
+
+**Xong khi:** giải thích được "transform của con là tương đối so với cha" bằng chính ví dụ mặt trăng của mình.
 
 **Ghi chú của tôi:**
 
@@ -93,7 +128,21 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - `THREE.Clock` — `getDelta()` và `getElapsedTime()`
 - Huỷ loop bằng `cancelAnimationFrame` khi unmount — không làm sẽ leak
 
-**Bài tập:** ⬜
+**Bài tập — làm hệ mặt trời quay**
+
+**Phần A — cố tình viết sai trước:**
+1. Dùng `rotation.y += 0.01` trong `requestAnimationFrame`
+2. Mở Chrome DevTools → `Ctrl+Shift+P` → gõ "Show Rendering" → bật **FPS meter**
+3. Vẫn trong tab Rendering, tìm mục giới hạn tốc độ khung hình và hạ xuống ~30fps
+4. **Quan sát:** hành tinh quay chậm đi một nửa
+
+**Phần B — sửa cho đúng:**
+5. Dùng `THREE.Clock`, nhân tốc độ với `delta`
+6. Lặp lại bước 3 → tốc độ quay **không đổi**
+
+**Phần C:** huỷ loop bằng `cancelAnimationFrame` trong cleanup. Kiểm chứng: thêm `console.log` trong loop, unmount component, xem log có dừng không.
+
+**Xong khi:** bạn có bằng chứng tận mắt cho câu trả lời phỏng vấn "vì sao phải nhân delta time" — không phải học thuộc.
 
 **Ghi chú của tôi:**
 
@@ -109,7 +158,16 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - Xử lý resize: cập nhật `camera.aspect` → **`camera.updateProjectionMatrix()`** → `renderer.setSize()`. Quên dòng giữa là ảnh méo — lỗi rất phổ biến.
 - `setPixelRatio(Math.min(window.devicePixelRatio, 2))` — vì sao phải chặn trần ở 2
 
-**Bài tập:** ⬜
+**Bài tập:**
+
+1. Thêm `OrbitControls` với `enableDamping = true` — nhớ gọi `controls.update()` mỗi frame
+2. Thử bỏ `controls.update()` → quan sát chuyển động giật cục
+3. Xử lý resize đầy đủ: `camera.aspect` → `updateProjectionMatrix()` → `renderer.setSize()`
+4. **Thử phá:** bỏ riêng dòng `updateProjectionMatrix()`, kéo cửa sổ hẹp lại → hình méo. Đây là lỗi rất phổ biến, gặp một lần sẽ nhớ mãi.
+5. Thêm nút chuyển qua lại giữa `PerspectiveCamera` và `OrthographicCamera` trên cùng scene → so sánh trực tiếp
+6. Đặt `setPixelRatio(window.devicePixelRatio)` không chặn trần, mở trên màn hình có DPR cao → đo FPS; sau đó chặn `Math.min(dpr, 2)` → đo lại
+
+**Xong khi:** resize mượt không méo, và bạn nói được vì sao chặn pixel ratio ở 2 (số pixel cần vẽ tăng theo **bình phương** DPR).
 
 **Ghi chú của tôi:**
 
@@ -124,7 +182,21 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - Gọi `gui.destroy()` trong cleanup của `useEffect`, nếu không mỗi lần hot-reload sẽ đẻ thêm một panel
 - **Dispose:** `geometry.dispose()`, `material.dispose()`, `texture.dispose()`, `renderer.dispose()` — GPU memory **không** được JS garbage collector thu hồi tự động. Đây là câu hỏi phỏng vấn hay gặp khi tích hợp Three.js vào React.
 
-**Bài tập:** ⬜
+**Bài tập:**
+
+**Phần A — Debug UI với `lil-gui`:**
+1. Slider tốc độ quay của từng hành tinh
+2. Color picker cho vật liệu (`gui.addColor`)
+3. Checkbox bật/tắt `wireframe` và ẩn/hiện mặt trăng
+4. Gom vào folder theo từng thiên thể
+
+**Phần B — Cleanup và chứng minh không rò rỉ:**
+5. Trong cleanup của `useEffect`: `gui.destroy()`, `cancelAnimationFrame`, duyệt scene gọi `geometry.dispose()` + `material.dispose()`, rồi `renderer.dispose()`
+6. **Đo thật:** log `renderer.info.memory` (`geometries`, `textures`)
+7. Vào/ra trang này **10 lần** liên tục, mỗi lần ghi lại con số
+8. Bỏ phần dispose đi, lặp lại → so sánh hai dãy số
+
+**Xong khi:** bạn có hai dãy số chứng minh có/không rò rỉ. Đây là dẫn chứng cho câu hỏi phỏng vấn *"tích hợp Three.js vào React thì quản lý lifecycle thế nào"* — và cũng là lý do `gui.destroy()` cần thiết (thiếu nó, mỗi lần hot-reload sẽ đẻ thêm một panel chồng lên nhau).
 
 **Ghi chú của tôi:**
 
@@ -141,7 +213,15 @@ Tài liệu sống. Mỗi bài học được thêm phần **Bài tập** và **
 - Kiểm tra WebGL chạy thật trên điện thoại — khác hẳn máy tính
 - Preview deployment cho mỗi PR
 
-**Bài tập:** ⬜
+**Bài tập:**
+
+1. Push code lên GitHub, nối repo với Vercel, deploy
+2. Mở URL trên **điện thoại thật** (không phải chế độ giả lập của DevTools)
+3. Ghi lại vào mục Ghi chú: FPS trên desktop vs trên điện thoại của bạn
+4. Tạo một branch mới, sửa nhỏ, mở Pull Request → xem Vercel tự tạo preview deployment cho PR đó
+5. Merge PR
+
+**Xong khi:** có URL công khai chạy được trên điện thoại, và bạn đã đi trọn một vòng quy trình `branch → PR → preview → merge` — đúng thứ JD yêu cầu ở mục *"Git (Branching, Merge, Pull Request)"*.
 
 **Ghi chú của tôi:**
 
