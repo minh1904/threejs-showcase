@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored third-party source (pixel-point/toolcraft, MIT). Kept as-is so it
+    // can be re-diffed against upstream; it does not satisfy the React Compiler
+    // lint rules that eslint-config-next enables.
+    "src/toolcraft/**",
   ]),
 ]);
 

@@ -2,8 +2,53 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { Badge, Panel, PanelSection, Segmented, Slider } from '@/toolcraft/ui';
 
 type ExperimentMode = 'standard' | 'camera-z0' | 'z-fighting' | 'fov-demo' | 'no-setsize';
+
+const EXPERIMENTS: readonly {
+  value: ExperimentMode;
+  label: string;
+  title: string;
+  hint: string;
+  tone: 'neutral' | 'danger' | 'warn' | 'info';
+}[] = [
+  {
+    value: 'standard',
+    label: 'Chuẩn',
+    title: 'Chuẩn bài tập 1.1',
+    hint: 'Camera z=3, FOV=75°, một khối hộp MeshBasicMaterial.',
+    tone: 'neutral',
+  },
+  {
+    value: 'camera-z0',
+    label: 'Z = 0',
+    title: 'camera.position.z = 0',
+    hint: 'Camera nằm trong khối hộp — hình biến mất do bị near plane cắt.',
+    tone: 'danger',
+  },
+  {
+    value: 'z-fighting',
+    label: 'Z-fight',
+    title: 'Z-fighting (near/far cực đoan)',
+    hint: 'near=0.0001, far=1.000.000 với hai mặt phẳng sát nhau.',
+    tone: 'warn',
+  },
+  {
+    value: 'fov-demo',
+    label: 'FOV',
+    title: 'Khảo sát frustum',
+    hint: 'Kéo FOV và Camera Z để thấy updateProjectionMatrix() tính lại frustum.',
+    tone: 'info',
+  },
+  {
+    value: 'no-setsize',
+    label: 'No size',
+    title: 'Bỏ renderer.setSize()',
+    hint: 'Canvas rơi về độ phân giải mặc định 300×150 của WebGL.',
+    tone: 'warn',
+  },
+];
 
 export function Lesson1_1() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -11,19 +56,21 @@ export function Lesson1_1() {
   const [fov, setFov] = useState<number>(75);
   const [cameraZ, setCameraZ] = useState<number>(3);
 
+  const activeExperiment = EXPERIMENTS.find((e) => e.value === experiment) ?? EXPERIMENTS[0];
+
   // Trạng thái hiển thị console mô phỏng được tính toán trực tiếp từ state
   const getStatusText = () => {
     switch (experiment) {
       case 'standard':
-        return `[Standard] Render 1 frame tĩnh: FOV=75°, Camera.Z=3.00, Near=0.1, Far=1000.`;
+        return '[standard] render 1 frame tĩnh · fov=75° · camera.z=3.00 · near=0.1 · far=1000';
       case 'camera-z0':
-        return `[Camera Z=0] Camera nằm trong khối hộp (0,0,0) -> Bị clipping qua near plane (Mất hình).`;
+        return '[camera-z0] camera nằm trong khối hộp (0,0,0) → clipping qua near plane';
       case 'z-fighting':
-        return `[Z-Fighting] Near=0.0001, Far=1.000.000. Hai mặt phẳng z=0 và z=0.00001 tranh chấp depth buffer.`;
+        return '[z-fighting] near=0.0001 · far=1e6 · hai plane z=0 và z=0.00001 tranh chấp depth buffer';
       case 'no-setsize':
-        return `[No setSize] Đã bỏ qua renderer.setSize() -> Canvas nhận độ phân giải mặc định 300x150 của WebGL.`;
+        return '[no-setsize] bỏ renderer.setSize() → canvas nhận mặc định 300×150';
       case 'fov-demo':
-        return `[FOV Demo] FOV=${fov}°, Camera.Z=${cameraZ.toFixed(2)}. frustum được tính toán lại qua camera.updateProjectionMatrix().`;
+        return `[fov-demo] fov=${fov}° · camera.z=${cameraZ.toFixed(2)} · frustum tính lại qua updateProjectionMatrix()`;
     }
   };
 
@@ -33,7 +80,7 @@ export function Lesson1_1() {
 
     // 1. Tạo Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a); // Slate-900
+    scene.background = new THREE.Color(0x0a0a0a);
 
     // 2. Kích thước container
     const width = container.clientWidth || 600;
@@ -86,13 +133,13 @@ export function Lesson1_1() {
     if (experiment === 'z-fighting') {
       // Dựng 2 mặt phẳng Plane cùng tọa độ z=0 và z=0.00001 cực sát nhau để gây z-fighting
       const planeGeo1 = new THREE.PlaneGeometry(2, 2);
-      const planeMat1 = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide }); // Đỏ
+      const planeMat1 = new THREE.MeshBasicMaterial({ color: 0xea733a, side: THREE.DoubleSide });
       const plane1 = new THREE.Mesh(planeGeo1, planeMat1);
       plane1.position.z = 0;
       scene.add(plane1);
 
       const planeGeo2 = new THREE.PlaneGeometry(1.6, 1.6);
-      const planeMat2 = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide }); // Xanh dương
+      const planeMat2 = new THREE.MeshBasicMaterial({ color: 0x0c8ce9, side: THREE.DoubleSide });
       const plane2 = new THREE.Mesh(planeGeo2, planeMat2);
       plane2.position.z = 0.00001; // Cực sát nhau
       scene.add(plane2);
@@ -104,13 +151,17 @@ export function Lesson1_1() {
       const boxGeometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
       // MeshBasicMaterial không cần đèn chiếu
       const boxMaterial = new THREE.MeshBasicMaterial({
-        color: experiment === 'camera-z0' ? 0xec4899 : 0x6366f1,
+        color: experiment === 'camera-z0' ? 0x9149f5 : 0x0c8ce9,
         wireframe: false,
       });
 
       // Tạo thêm viền wireframe mờ để dễ nhìn hình khối 3D dù chỉ dùng MeshBasicMaterial
       const wireframeGeo = new THREE.WireframeGeometry(boxGeometry);
-      const wireframeMat = new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.4, transparent: true });
+      const wireframeMat = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        opacity: 0.4,
+        transparent: true,
+      });
       const wireframeLine = new THREE.LineSegments(wireframeGeo, wireframeMat);
 
       const cube = new THREE.Mesh(boxGeometry, boxMaterial);
@@ -153,238 +204,108 @@ export function Lesson1_1() {
     };
   }, [experiment, fov, cameraZ]);
 
+  function resetControls(): void {
+    setExperiment('standard');
+    setFov(75);
+    setCameraZ(3);
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* 3D Canvas Viewport */}
-      <div className="relative w-full h-[420px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl flex flex-col justify-between">
-        <div ref={containerRef} className="w-full h-full" />
+    <div className="flex flex-col overflow-hidden rounded-lg border border-[color:color-mix(in_oklab,var(--border)_35%,transparent)] bg-[color:var(--background)] lg:flex-row">
+      {/* Viewport */}
+      <div className="relative min-h-[420px] flex-1">
+        <div ref={containerRef} className="absolute inset-0" />
 
-        {/* Overlay Badges */}
-        <div className="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none">
-          <span className="px-3 py-1 text-xs font-mono font-medium rounded-full bg-slate-900/90 text-indigo-400 border border-indigo-500/30 backdrop-blur-md">
-            Renderer: WebGLRenderer (Single Frame)
-          </span>
-          <span className="px-3 py-1 text-xs font-mono font-medium rounded-full bg-slate-900/90 text-emerald-400 border border-emerald-500/30 backdrop-blur-md">
-            Status: Active
-          </span>
-          {experiment === 'camera-z0' && (
-            <span className="px-3 py-1 text-xs font-mono font-bold rounded-full bg-rose-950/90 text-rose-400 border border-rose-500/50 backdrop-blur-md animate-pulse">
-              Camera.Z = 0 (Bị clip/Mất hình)
-            </span>
-          )}
-          {experiment === 'z-fighting' && (
-            <span className="px-3 py-1 text-xs font-mono font-bold rounded-full bg-amber-950/90 text-amber-400 border border-amber-500/50 backdrop-blur-md animate-pulse">
-              Z-Fighting (Suy giảm Depth Buffer)
-            </span>
-          )}
+        {/* HUD trên canvas */}
+        <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
+          <Badge variant="outline" className="font-mono backdrop-blur-md">
+            {activeExperiment.title}
+          </Badge>
+          {activeExperiment.tone === 'danger' ? (
+            <Badge variant="destructive" className="font-mono">
+              clipped
+            </Badge>
+          ) : null}
+          {activeExperiment.tone === 'warn' ? (
+            <Badge variant="warning" className="font-mono">
+              artifact
+            </Badge>
+          ) : null}
         </div>
 
-        {/* Console Log Bar */}
-        <div className="absolute bottom-3 left-4 right-4 pointer-events-none bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-xl px-4 py-2 font-mono text-xs text-slate-300 flex items-center justify-between">
-          <span className="truncate">{getStatusText()}</span>
-          <span className="text-indigo-400 text-[10px] uppercase tracking-wider shrink-0 ml-2">Console Live</span>
+        {/* Status bar kiểu console */}
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between gap-3 rounded-md border border-[color:color-mix(in_oklab,var(--border)_20%,transparent)] bg-[color:color-mix(in_oklab,var(--popover)_80%,transparent)] px-3 py-1.5 backdrop-blur-md">
+          <span className="truncate font-mono text-2xs text-[color:var(--muted-foreground)]">
+            {getStatusText()}
+          </span>
+          <span className="shrink-0 font-mono text-2xs tracking-wider text-[color:var(--accent)] uppercase">
+            live
+          </span>
         </div>
       </div>
 
-      {/* Lab Thử Phá Cho Hiểu */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
-          <div>
-            <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
-              Thử phá cho hiểu (Interactive Lab)
-            </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              Thực hành các kịch bản lỗi kinh điển trong Three.js để hiểu bản chất toán học &amp; đồ họa.
+      {/* Panel điều khiển */}
+      <Panel
+        title="Camera & Renderer"
+        className="max-h-none w-full shrink-0 rounded-none border-0 border-t border-[color:color-mix(in_oklab,var(--border)_35%,transparent)] lg:w-[300px] lg:border-t-0 lg:border-l"
+        onResetControls={resetControls}
+      >
+        <PanelSection title="Kịch bản thử phá" description={activeExperiment.hint}>
+          <Segmented
+            ariaLabel="Chọn kịch bản thí nghiệm"
+            name="experiment"
+            options={EXPERIMENTS.map((e) => ({ label: e.label, value: e.value }))}
+            value={experiment}
+            onValueChange={(value) => setExperiment(value as ExperimentMode)}
+          />
+        </PanelSection>
+
+        <PanelSection title="Frustum" spacing="technical">
+          <Slider
+            name="FOV"
+            unit="°"
+            min={10}
+            max={140}
+            step={1}
+            value={fov}
+            baseValue={75}
+            disabled={experiment !== 'fov-demo'}
+            onValueChange={(value) => setFov(value)}
+          />
+          <Slider
+            name="Camera Z"
+            min={0}
+            max={12}
+            step={0.05}
+            value={cameraZ}
+            baseValue={3}
+            disabled={experiment !== 'fov-demo'}
+            onValueChange={(value) => setCameraZ(value)}
+          />
+          {experiment !== 'fov-demo' ? (
+            <p className="text-2xs text-[color:var(--muted-foreground)]">
+              Chuyển sang kịch bản <span className="font-mono text-[color:var(--foreground)]">FOV</span> để mở
+              khoá hai slider này.
             </p>
-          </div>
-          <button
-            onClick={() => {
-              setExperiment('standard');
-              setFov(75);
-              setCameraZ(3);
-            }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors self-start sm:self-auto cursor-pointer"
-          >
-            ↺ Đặt lại chuẩn (Standard)
-          </button>
-        </div>
+          ) : null}
+        </PanelSection>
 
-        {/* Experiment Selector Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <button
-            onClick={() => {
-              setExperiment('standard');
-              setCameraZ(3);
-              setFov(75);
-            }}
-            className={`text-left p-3.5 rounded-xl border text-xs transition-all cursor-pointer ${
-              experiment === 'standard'
-                ? 'bg-indigo-600/20 border-indigo-500/80 text-white shadow-lg shadow-indigo-500/10'
-                : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-            }`}
-          >
-            <div className="font-semibold text-indigo-300">1. Chuẩn bài tập 1.1</div>
-            <div className="text-[11px] text-slate-400 mt-1">Camera z=3, FOV=75°, 1 hộp MeshBasicMaterial</div>
-          </button>
-
-          <button
-            onClick={() => {
-              setExperiment('camera-z0');
-              setCameraZ(0);
-            }}
-            className={`text-left p-3.5 rounded-xl border text-xs transition-all cursor-pointer ${
-              experiment === 'camera-z0'
-                ? 'bg-rose-600/20 border-rose-500/80 text-white shadow-lg shadow-rose-500/10'
-                : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-            }`}
-          >
-            <div className="font-semibold text-rose-400">2. Đặt camera.position.z = 0</div>
-            <div className="text-[11px] text-slate-400 mt-1">Quan sát mất hình do camera nằm trong vật &amp; near plane</div>
-          </button>
-
-          <button
-            onClick={() => {
-              setExperiment('z-fighting');
-            }}
-            className={`text-left p-3.5 rounded-xl border text-xs transition-all cursor-pointer ${
-              experiment === 'z-fighting'
-                ? 'bg-amber-600/20 border-amber-500/80 text-white shadow-lg shadow-amber-500/10'
-                : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-            }`}
-          >
-            <div className="font-semibold text-amber-400">3. Z-Fighting (near/far cực đoan)</div>
-            <div className="text-[11px] text-slate-400 mt-1">near=0.0001 &amp; far=1.000.000 với 2 mặt phẳng sát nhau</div>
-          </button>
-
-          <button
-            onClick={() => {
-              setExperiment('no-setsize');
-            }}
-            className={`text-left p-3.5 rounded-xl border text-xs transition-all cursor-pointer ${
-              experiment === 'no-setsize'
-                ? 'bg-cyan-600/20 border-cyan-500/80 text-white shadow-lg shadow-cyan-500/10'
-                : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-            }`}
-          >
-            <div className="font-semibold text-cyan-400">4. Bỏ renderer.setSize()</div>
-            <div className="text-[11px] text-slate-400 mt-1">Xem kích thước mặc định 300x150 của thẻ canvas</div>
-          </button>
-        </div>
-
-        {/* Dynamic Sliders */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          {/* Slider FOV */}
-          <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-300 font-medium">Góc nhìn FOV (Field of View)</span>
-              <span className="font-mono text-indigo-400 font-semibold">{fov}°</span>
-            </div>
-            <input
-              type="range"
-              min="20"
-              max="120"
-              step="1"
-              value={fov}
-              onChange={(e) => {
-                setFov(Number(e.target.value));
-                if (experiment !== 'fov-demo' && experiment !== 'standard') {
-                  setExperiment('fov-demo');
-                }
-              }}
-              className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-              <span>20° (Telephoto/Hẹp)</span>
-              <span>75° (Mặc định)</span>
-              <span>120° (Fish-eye/Rộng)</span>
-            </div>
-          </div>
-
-          {/* Slider Camera Z */}
-          <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-300 font-medium">Vị trí Camera Z (Khoảng cách)</span>
-              <span className="font-mono text-indigo-400 font-semibold">{cameraZ.toFixed(2)}</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="8"
-              step="0.1"
-              value={cameraZ}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                setCameraZ(val);
-                if (val === 0) {
-                  setExperiment('camera-z0');
-                } else if (experiment === 'camera-z0') {
-                  setExperiment('standard');
-                }
-              }}
-              className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-              <span>0 (Tâm gốc)</span>
-              <span>3.0 (Chuẩn)</span>
-              <span>8.0 (Xa)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Explanation Card based on active experiment */}
-        <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/90 text-xs leading-relaxed text-slate-300">
-          {experiment === 'standard' && (
-            <div>
-              <span className="font-semibold text-indigo-400">Giải thích chuẩn:</span> Scene chứa 1{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">Mesh</code> gồm{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">BoxGeometry</code> và{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">MeshBasicMaterial</code>. Camera đặt ở{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">z = 3</code> hướng về tâm gốc{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">(0, 0, 0)</code>. Render đúng 1 khung hình
-              duy nhất mà không cần vòng lặp animation.
-            </div>
-          )}
-          {experiment === 'camera-z0' && (
-            <div>
-              <span className="font-semibold text-rose-400">Vì sao mất hình khi z = 0?</span> Khối hộp có kích thước 1.2
-              được đặt ở gốc tọa độ <code className="bg-slate-800 px-1.5 py-0.5 rounded text-rose-300">(0,0,0)</code> nên
-              trải dài từ <code className="bg-slate-800 px-1 py-0.5 rounded">-0.6</code> đến{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded">+0.6</code> trên trục Z. Khi đặt camera tại{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded">z = 0</code>, camera nằm trọn bên trong khối hộp. Do{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded">MeshBasicMaterial</code> mặc định chỉ render mặt trước
-              (FrontSide) và các đỉnh nằm sau mặt phẳng cắt gần (<code className="bg-slate-800 px-1 py-0.5 rounded">near=0.1</code>),
-              toàn bộ hình học bị loại bỏ (clipping).
-            </div>
-          )}
-          {experiment === 'z-fighting' && (
-            <div>
-              <span className="font-semibold text-amber-400">Bản chất Z-Fighting là gì?</span> GPU dùng Depth Buffer
-              (Z-buffer) để xác định pixel nào ở trước pixel nào. Khi tỉ lệ{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-amber-300">far / near = 10.000.000.000</code> quá lớn,
-              độ chính xác số thực (floating point precision) của depth buffer bị phân tán mỏng, khiến GPU không thể phân
-              biệt 2 mặt phẳng cách nhau <code className="bg-slate-800 px-1 py-0.5 rounded">0.00001</code> đơn vị, dẫn đến
-              hiện tượng nhấp nháy pixel bề mặt.
-            </div>
-          )}
-          {experiment === 'no-setsize' && (
-            <div>
-              <span className="font-semibold text-cyan-400">Bỏ renderer.setSize():</span> Thẻ{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded text-cyan-300">&lt;canvas&gt;</code> HTML có kích thước mặc
-              định theo đặc tả Web là <code className="bg-slate-800 px-1 py-0.5 rounded">300x150 px</code>. Nếu không gọi{' '}
-              <code className="bg-slate-800 px-1 py-0.5 rounded">renderer.setSize(w, h)</code>, canvas sẽ bị vỡ nét và tỉ
-              lệ khung hình (aspect ratio) bị sai lệch hoàn toàn so với container cha.
-            </div>
-          )}
-          {experiment === 'fov-demo' && (
-            <div>
-              <span className="font-semibold text-indigo-400">Thay đổi FOV:</span> FOV (Field of View) là góc mở thị trường
-              theo chiều dọc tính bằng độ. FOV nhỏ (20°) hoạt động như ống kính tele (phẳng hóa chiều sâu, phóng to vật thể),
-              trong khi FOV lớn (120°) tạo hiệu ứng mắt cá góc siêu rộng làm biến dạng các góc mép của khối hộp.
-            </div>
-          )}
-        </div>
-      </div>
+        <PanelSection title="Tham số đang áp dụng" spacing="technical">
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 font-mono text-2xs">
+            {[
+              ['near', experiment === 'z-fighting' ? '0.0001' : '0.1'],
+              ['far', experiment === 'z-fighting' ? '1000000' : '1000'],
+              ['fov', experiment === 'fov-demo' ? String(fov) : '75'],
+              ['pixelRatio', 'min(dpr, 2)'],
+            ].map(([key, value]) => (
+              <React.Fragment key={key}>
+                <dt className="text-[color:var(--muted-foreground)]">{key}</dt>
+                <dd className="text-right text-[color:var(--foreground)]">{value}</dd>
+              </React.Fragment>
+            ))}
+          </dl>
+        </PanelSection>
+      </Panel>
     </div>
   );
 }
