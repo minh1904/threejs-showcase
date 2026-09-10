@@ -16,7 +16,7 @@ Tài liệu sống. Toàn bộ **38 bài tập đã viết sẵn**; phần **Ghi
 
 | Module | Chủ đề | Số bài | Tuần | Trạng thái |
 |---|---|---|---|---|
-| 1 | Three.js thuần — nền tảng | 7 | 1 | ⬜ Chưa bắt đầu |
+| 1 | Three.js thuần — nền tảng | 7 | 1 | 🟨 Đang làm (Xong 1.1) |
 | 2 | Ánh sáng & Vật liệu | 7 | 2 | ⬜ |
 | 3 | Model 3D thật (GLTF/GLB) | 4 | 2 | ⬜ |
 | 4 | Tương tác & React Three Fiber | 8 | 3 | ⬜ |
@@ -60,7 +60,12 @@ Dựng scene đầu tiên: một khối hộp màu, render đúng **một** khun
 
 **Xong khi:** khối hộp hiện ra, và bạn giải thích được **từng dòng** làm gì mà không cần nhìn lại tài liệu.
 
-**Ghi chú của tôi:** *(để trống — tự điền khi học)*
+**Ghi chú của tôi:**
+- **Bộ ba cốt lõi:** `Scene` (cây chứa vật thể), `PerspectiveCamera` (góc nhìn), `WebGLRenderer` (vẽ kết quả lên `<canvas>`).
+- **Z-Fighting:** Depth buffer của GPU ánh xạ phi tuyến tính (logarithmic). Khi tỉ lệ `far / near` quá lớn (ví dụ `near = 0.0001`, `far = 1.000.000`), độ chính xác phân biệt chiều sâu ở khoảng cách xa bị nén mỏng, khiến 2 mặt phẳng gần nhau bị nhấp nháy tranh nhau render.
+- **Camera Z = 0:** Camera nằm lọt trong lòng khối hộp tại gốc `(0,0,0)`, các mặt trước nằm sau mặt phẳng cắt gần (`near = 0.1`) nên toàn bộ bị clipping biến mất.
+- **Bỏ `setSize()`:** Canvas nhận kích thước mặc định `300x150` px của HTML spec, làm hình bị mờ và lệch aspect ratio.
+- **Dọn dẹp trong React:** JavaScript Garbage Collector không tự giải phóng GPU VRAM. Bắt buộc phải gọi `geometry.dispose()`, `material.dispose()`, `renderer.dispose()` và gỡ thẻ canvas khi component unmount để tránh rò rỉ bộ nhớ.
 
 ---
 
