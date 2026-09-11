@@ -1,3 +1,10 @@
+/**
+ * Tiến độ học của chính bạn — tự tay đổi khi học xong một bài.
+ * Đây KHÔNG phải trạng thái soạn nội dung; số bài đã soạn lấy từ
+ * AUTHORED_LESSON_IDS trong `@/data/lessons`.
+ */
+export type LessonStatus = 'completed' | 'in-progress' | 'not-started';
+
 export interface Lesson {
   id: string;
   moduleNumber: number;
@@ -5,7 +12,7 @@ export interface Lesson {
   title: string;
   subtitle: string;
   description: string;
-  status: 'completed' | 'in-progress' | 'not-started';
+  status: LessonStatus;
   stack: 'vanilla' | 'r3f';
 }
 
@@ -14,8 +21,14 @@ export interface Module {
   title: string;
   description: string;
   week: number;
-  status: 'completed' | 'in-progress' | 'not-started';
   lessons: Lesson[];
+}
+
+/** Trạng thái module suy ra từ các bài bên trong — chỉ cần tích ở cấp bài. */
+export function getModuleStatus(mod: Module): LessonStatus {
+  const done = mod.lessons.filter((l) => l.status === 'completed').length;
+  if (done === 0) return 'not-started';
+  return done === mod.lessons.length ? 'completed' : 'in-progress';
 }
 
 export const CURRICULUM: Module[] = [
@@ -24,7 +37,6 @@ export const CURRICULUM: Module[] = [
     title: "Three.js thuần — nền tảng",
     description: "Viết bằng vanilla Three.js trong useEffect. Hiểu sâu cấu trúc scene graph, camera, WebGL renderer và vòng đời dọn dẹp bộ nhớ.",
     week: 1,
-    status: "in-progress",
     lessons: [
       {
         id: "1-1",
@@ -103,7 +115,6 @@ export const CURRICULUM: Module[] = [
     title: "Ánh sáng & Vật liệu",
     description: "Khám phá PBR (Physically Based Rendering), đổ bóng shadow maps, texture sampling, tone mapping và environment maps.",
     week: 2,
-    status: "not-started",
     lessons: [
       { id: "2-1", moduleNumber: 2, lessonNumber: "2.1", title: "Các loại Material", subtitle: "MeshBasic, Standard, Physical, Normal", description: "So sánh các mô hình phản xạ ánh sáng từ basic đến PBR.", status: "not-started", stack: "vanilla" },
       { id: "2-2", moduleNumber: 2, lessonNumber: "2.2", title: "Ánh sáng cơ bản", subtitle: "Ambient, Directional, Point, Spot, Hemisphere", description: "Cách phối hợp các nguồn sáng tạo chiều sâu cho scene 3D.", status: "not-started", stack: "vanilla" },
@@ -119,7 +130,6 @@ export const CURRICULUM: Module[] = [
     title: "Model 3D thật (GLTF/GLB)",
     description: "Tải, tối ưu hóa và phát animation từ các file mô hình 3D thực tế sản xuất.",
     week: 2,
-    status: "not-started",
     lessons: [
       { id: "3-1", moduleNumber: 3, lessonNumber: "3.1", title: "GLTF/GLB & Nén Draco", subtitle: "GLTFLoader và DRACOLoader", description: "Tải model 3D nén dung lượng nhỏ và giải mã nhanh chóng.", status: "not-started", stack: "vanilla" },
       { id: "3-2", moduleNumber: 3, lessonNumber: "3.2", title: "Loading State & Error Handling", subtitle: "Trải nghiệm tải mượt mà", description: "Progress bar và xử lý lỗi mạng khi nạp tài nguyên 3D lớn.", status: "not-started", stack: "vanilla" },
@@ -132,7 +142,6 @@ export const CURRICULUM: Module[] = [
     title: "Tương tác & React Three Fiber (R3F)",
     description: "Chuyển giao mượt mà từ Three.js thuần sang hệ sinh thái React Three Fiber khai báo.",
     week: 3,
-    status: "not-started",
     lessons: [
       { id: "4-1", moduleNumber: 4, lessonNumber: "4.1", title: "Raycasting & Mouse Picking (Vanilla)", subtitle: "Tương tác nhấp chuột trong 3D", description: "Sử dụng Raycaster và Vector2 toạ độ chuột chuẩn hóa NDC.", status: "not-started", stack: "vanilla" },
       { id: "4-2", moduleNumber: 4, lessonNumber: "4.2", title: "Chuyển giao Vanilla sang R3F", subtitle: "So sánh trực quan 1-1", description: "Tái cấu trúc demo sang Canvas, JSX declaratives và useFrame hook.", status: "not-started", stack: "r3f" },
@@ -149,7 +158,6 @@ export const CURRICULUM: Module[] = [
     title: "Hiệu năng (Điểm cộng JD)",
     description: "Đo đạc, tối ưu hóa Draw Calls, InstancedMesh, quản lý bộ nhớ và kiểm thử trên mobile.",
     week: 4,
-    status: "not-started",
     lessons: [
       { id: "5-1", moduleNumber: 5, lessonNumber: "5.1", title: "Đo đạc hiệu năng với r3f-perf & Spector.js", subtitle: "Draw calls, Triangles, GPU Memory", description: "Đo lường các chỉ số hiệu năng trước và sau tối ưu.", status: "not-started", stack: "r3f" },
       { id: "5-2", moduleNumber: 5, lessonNumber: "5.2", title: "InstancedMesh & BatchedMesh", subtitle: "Giảm hàng ngàn Draw calls về 1", description: "Vẽ 10.000 vật thể cùng lúc với 1 draw call duy nhất.", status: "not-started", stack: "r3f" },
@@ -164,7 +172,6 @@ export const CURRICULUM: Module[] = [
     title: "Hiệu ứng & Hoàn thiện",
     description: "Post-processing, Shaders, Particles và hiệu ứng Scroll 3D để tạo sản phẩm ấn tượng.",
     week: 5,
-    status: "not-started",
     lessons: [
       { id: "6-1", moduleNumber: 6, lessonNumber: "6.1", title: "Particle Systems (Points)", subtitle: "Bụi ngân hà và hiệu ứng hạt", description: "Sử dụng THREE.Points và Float32Array vị trí tùy biến.", status: "not-started", stack: "r3f" },
       { id: "6-2", moduleNumber: 6, lessonNumber: "6.2", title: "Render Targets & Mirrors", subtitle: "Kết cấu hiển thị động", description: "Vẽ scene vào WebGLRenderTarget làm gương phản chiếu và camera phụ.", status: "not-started", stack: "r3f" },

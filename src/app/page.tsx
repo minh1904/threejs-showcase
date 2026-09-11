@@ -1,7 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon, CubeIcon, GithubLogoIcon } from '@phosphor-icons/react/dist/ssr';
-import { CURRICULUM } from '@/data/curriculum';
+import { CURRICULUM, getModuleStatus, type LessonStatus } from '@/data/curriculum';
+import { AUTHORED_LESSON_IDS } from '@/data/lessons';
 import { Badge, Separator } from '@/toolcraft/ui';
 import { buttonVariants } from '@/toolcraft/ui/components/primitives/button-variants';
 import { cn } from '@/toolcraft/ui/lib/utils';
@@ -9,18 +10,26 @@ import { cn } from '@/toolcraft/ui/lib/utils';
 const SURFACE = 'border border-[color:color-mix(in_oklab,var(--border)_25%,transparent)]';
 const PANEL = cn(SURFACE, 'rounded-lg bg-[color:color-mix(in_oklab,var(--card)_35%,transparent)]');
 
-const STATUS_LABEL: Record<string, { label: string; variant: 'default' | 'secondary' | 'warning' | 'outline' | 'ghost' }> = {
+const STATUS_LABEL: Record<
+  LessonStatus,
+  { label: string; variant: 'default' | 'secondary' | 'warning' | 'outline' | 'ghost' }
+> = {
   completed: { label: 'done', variant: 'default' },
   'in-progress': { label: 'wip', variant: 'warning' },
   'not-started': { label: 'todo', variant: 'ghost' },
 };
 
+const AUTHORED = new Set(AUTHORED_LESSON_IDS);
+
 export default function Home() {
-  const totalLessons = CURRICULUM.reduce((acc, m) => acc + m.lessons.length, 0);
-  const completedLessons = CURRICULUM.reduce(
-    (acc, m) => acc + m.lessons.filter((l) => l.status === 'completed').length,
-    0
-  );
+  const allLessons = CURRICULUM.flatMap((m) => m.lessons);
+  const totalLessons = allLessons.length;
+
+  /** Bao nhiêu bài đã có nội dung — tính từ dữ liệu bài giảng, không phải khai báo tay. */
+  const authoredLessons = allLessons.filter((l) => AUTHORED.has(l.id)).length;
+
+  /** Bao nhiêu bài bạn đã học xong — tự tích qua `status` trong curriculum.ts. */
+  const completedLessons = allLessons.filter((l) => l.status === 'completed').length;
   const progress = Math.round((completedLessons / totalLessons) * 100);
 
   return (
@@ -45,7 +54,7 @@ export default function Home() {
 
           <div className="flex items-center gap-1.5">
             <span className="hidden font-mono text-2xs text-[color:var(--muted-foreground)] sm:inline">
-              {completedLessons}/{totalLessons} · {progress}%
+              soạn {authoredLessons}/{totalLessons} · học {completedLessons}/{totalLessons}
             </span>
             <a
               href="https://github.com/minh1904/threejs-showcase"
@@ -88,9 +97,9 @@ export default function Home() {
         {/* Metrics — dense readout, tool-style */}
         <section className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[color:color-mix(in_oklab,var(--border)_25%,transparent)] bg-[color:color-mix(in_oklab,var(--border)_25%,transparent)] sm:grid-cols-4">
           {[
-            { label: 'modules', value: '6' },
-            { label: 'bài tập', value: String(totalLessons) },
-            { label: 'tiến độ', value: `${progress}%`, accent: true },
+            { label: 'modules', value: String(CURRICULUM.length) },
+            { label: 'bài đã soạn', value: `${authoredLessons}/${totalLessons}` },
+            { label: 'tiến độ học', value: `${progress}%`, accent: true },
             { label: 'stack', value: 'three 0.185 · r3f 9', mono: true },
           ].map((metric) => (
             <div
@@ -155,14 +164,15 @@ export default function Home() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {CURRICULUM.map((mod) => {
-              const status = STATUS_LABEL[mod.status] ?? STATUS_LABEL['not-started'];
+              const status = STATUS_LABEL[getModuleStatus(mod)];
+              const modDone = mod.lessons.filter((l) => l.status === 'completed').length;
 
               return (
                 <div key={mod.id} className={cn(PANEL, 'flex flex-col')}>
                   <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
                     <div className="flex flex-col gap-1.5">
                       <span className="font-mono text-2xs tracking-wider text-[color:var(--muted-foreground)] uppercase">
-                        module {mod.id} · tuần {mod.week}
+                        module {mod.id} · tuần {mod.week} · {modDone}/{mod.lessons.length}
                       </span>
                       <h3 className="text-xs-plus font-medium">{mod.title}</h3>
                     </div>
