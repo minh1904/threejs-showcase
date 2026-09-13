@@ -8,6 +8,8 @@ import {
   GithubLogoIcon,
 } from '@phosphor-icons/react/dist/ssr';
 import { CURRICULUM } from '@/data/curriculum';
+import { LessonDoneToggle } from '@/components/progress/LessonDoneToggle';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { getLessonContent } from '@/data/lessons';
 import { Lesson1_1 } from '@/components/lessons/module-1/Lesson1_1';
 import { LessonArticle } from '@/components/lessons/LessonArticle';
@@ -103,6 +105,7 @@ export default async function LessonPage({ params }: Props) {
                 <ArrowRightIcon className="size-3.5" />
               </Link>
             ) : null}
+            <ThemeToggle />
             <a
               href="https://github.com/minh1904/threejs-showcase"
               target="_blank"
@@ -124,15 +127,10 @@ export default async function LessonPage({ params }: Props) {
               {currentModuleTitle}
             </span>
             <Separator orientation="vertical" className="h-3" />
-            <Badge
-              variant={currentLesson.status === 'completed' ? 'default' : 'ghost'}
-              className="font-mono"
-            >
-              {currentLesson.status === 'completed' ? 'done' : 'todo'}
-            </Badge>
             <Badge variant="outline" className="font-mono">
               {currentLesson.stack === 'vanilla' ? 'vanilla three.js' : 'react three fiber'}
             </Badge>
+            <LessonDoneToggle id={currentLesson.id} />
           </div>
 
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -174,6 +172,33 @@ export default async function LessonPage({ params }: Props) {
               </Link>
             </div>
           )}
+        </div>
+        {/* Kết bài: tích trạng thái rồi đi tiếp */}
+        <div
+          className={cn(
+            PANEL,
+            'mt-10 flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center'
+          )}
+        >
+          <div className="flex flex-col gap-1">
+            <span className="text-2xs font-medium">Đã làm xong bài {currentLesson.lessonNumber}?</span>
+            <span className="text-2xs text-[color:var(--muted-foreground)]">
+              Tiến độ lưu trên máy bạn và hiện lại ở trang lộ trình.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <LessonDoneToggle id={currentLesson.id} />
+            {nextLesson ? (
+              <Link
+                href={`/lessons/${nextLesson.id}`}
+                className={cn(buttonVariants({ variant: 'outline', size: 'xs' }), 'gap-1.5')}
+              >
+                Bài {nextLesson.lessonNumber}
+                <ArrowRightIcon className="size-3.5" />
+              </Link>
+            ) : null}
+          </div>
         </div>
       </main>
 

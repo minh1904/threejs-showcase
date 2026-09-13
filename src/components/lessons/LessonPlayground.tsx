@@ -18,9 +18,10 @@ import { cn } from '@/toolcraft/ui/lib/utils';
 
 /**
  * Sandpack theme mapped onto the Toolcraft design tokens so the editor reads as
- * part of the same tool, not an embedded widget. Surfaces reference the CSS
- * variables directly; the syntax palette is derived from --accent / --inspect /
- * --attention since Toolcraft ships no syntax colours of its own.
+ * part of the same tool, not an embedded widget. Every colour references a CSS
+ * variable, so the editor follows the light/dark switch without re-mounting;
+ * the syntax palette is derived from --accent / --inspect / --attention / --link
+ * since Toolcraft ships no syntax colours of its own.
  */
 const TOOLCRAFT_SANDPACK_THEME: SandpackTheme = {
   colors: {
@@ -38,13 +39,13 @@ const TOOLCRAFT_SANDPACK_THEME: SandpackTheme = {
   syntax: {
     plain: 'var(--foreground)',
     comment: { color: 'var(--muted-foreground)', fontStyle: 'italic' },
-    keyword: '#9149f5',
-    tag: '#0c8ce9',
+    keyword: 'var(--inspect)',
+    tag: 'var(--accent)',
     punctuation: 'var(--muted-foreground)',
-    definition: '#0c8ce9',
-    property: '#70b0fa',
-    static: '#ea733a',
-    string: '#ea733a',
+    definition: 'var(--accent)',
+    property: 'var(--link)',
+    static: 'var(--attention)',
+    string: 'var(--attention)',
   },
   font: {
     body: 'var(--font-sans)',

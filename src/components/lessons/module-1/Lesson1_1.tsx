@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Badge, Panel, PanelSection, Segmented, Slider } from '@/toolcraft/ui';
+import { useResolvedTheme } from '@/lib/use-resolved-theme';
 
 type ExperimentMode = 'standard' | 'camera-z0' | 'z-fighting' | 'fov-demo' | 'no-setsize';
 
@@ -55,6 +56,7 @@ export function Lesson1_1() {
   const [experiment, setExperiment] = useState<ExperimentMode>('standard');
   const [fov, setFov] = useState<number>(75);
   const [cameraZ, setCameraZ] = useState<number>(3);
+  const theme = useResolvedTheme();
 
   const activeExperiment = EXPERIMENTS.find((e) => e.value === experiment) ?? EXPERIMENTS[0];
 
@@ -80,7 +82,8 @@ export function Lesson1_1() {
 
     // 1. Tạo Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
+    // Nền viewport đi theo chủ đề: CSS không với tới được màu nền của scene.
+    scene.background = new THREE.Color(theme === 'dark' ? 0x0a0a0a : 0xeef0f3);
 
     // 2. Kích thước container
     const width = container.clientWidth || 600;
@@ -202,7 +205,7 @@ export function Lesson1_1() {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [experiment, fov, cameraZ]);
+  }, [experiment, fov, cameraZ, theme]);
 
   function resetControls(): void {
     setExperiment('standard');

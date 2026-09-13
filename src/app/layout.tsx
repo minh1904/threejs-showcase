@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { THEME_INIT_SCRIPT } from '@/lib/theme';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -24,7 +25,16 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="vi"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
       data-focus-visible-mode="keyboard"
+      // Inline script bên dưới đổi class trên <html> trước khi React hydrate.
+      suppressHydrationWarning
     >
+      <head>
+        {/*
+          Chạy đồng bộ lúc trình duyệt phân tích HTML, tức trước khung hình đầu
+          tiên: không có nhịp nào loé sai màu. Xem `src/lib/theme.ts`.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full font-sans">{children}</body>
     </html>
   );
