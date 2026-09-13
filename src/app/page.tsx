@@ -1,23 +1,24 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon, CubeIcon, GithubLogoIcon } from '@phosphor-icons/react/dist/ssr';
-import { CURRICULUM, getModuleStatus, type LessonStatus } from '@/data/curriculum';
+import { CURRICULUM } from '@/data/curriculum';
 import { AUTHORED_LESSON_IDS } from '@/data/lessons';
-import { Badge, Separator } from '@/toolcraft/ui';
+import { CurriculumGrid } from '@/components/progress/CurriculumGrid';
+import { LessonStatusBadge } from '@/components/progress/LessonStatusBadge';
+import {
+  DoneCount,
+  ProgressCounter,
+  ProgressPercent,
+  ResetProgressButton,
+} from '@/components/progress/ProgressReadout';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { Badge } from '@/toolcraft/ui';
+import { Separator } from '@/toolcraft/ui';
 import { buttonVariants } from '@/toolcraft/ui/components/primitives/button-variants';
 import { cn } from '@/toolcraft/ui/lib/utils';
 
 const SURFACE = 'border border-[color:color-mix(in_oklab,var(--border)_25%,transparent)]';
 const PANEL = cn(SURFACE, 'rounded-lg bg-[color:color-mix(in_oklab,var(--card)_35%,transparent)]');
-
-const STATUS_LABEL: Record<
-  LessonStatus,
-  { label: string; variant: 'default' | 'secondary' | 'warning' | 'outline' | 'ghost' }
-> = {
-  completed: { label: 'done', variant: 'default' },
-  'in-progress': { label: 'wip', variant: 'warning' },
-  'not-started': { label: 'todo', variant: 'ghost' },
-};
 
 const AUTHORED = new Set(AUTHORED_LESSON_IDS);
 
@@ -27,10 +28,6 @@ export default function Home() {
 
   /** Bao nhiêu bài đã có nội dung — tính từ dữ liệu bài giảng, không phải khai báo tay. */
   const authoredLessons = allLessons.filter((l) => AUTHORED.has(l.id)).length;
-
-  /** Bao nhiêu bài bạn đã học xong — tự tích qua `status` trong curriculum.ts. */
-  const completedLessons = allLessons.filter((l) => l.status === 'completed').length;
-  const progress = Math.round((completedLessons / totalLessons) * 100);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -53,9 +50,8 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="hidden font-mono text-2xs text-[color:var(--muted-foreground)] sm:inline">
-              soạn {authoredLessons}/{totalLessons} · học {completedLessons}/{totalLessons}
-            </span>
+            <ProgressCounter authored={authoredLessons} />
+            <ThemeToggle />
             <a
               href="https://github.com/minh1904/threejs-showcase"
               target="_blank"
@@ -99,8 +95,8 @@ export default function Home() {
           {[
             { label: 'modules', value: String(CURRICULUM.length) },
             { label: 'bài đã soạn', value: `${authoredLessons}/${totalLessons}` },
-            { label: 'tiến độ học', value: `${progress}%`, accent: true },
-            { label: 'stack', value: 'three 0.185 · r3f 9', mono: true },
+            { label: 'bài đã học', value: <DoneCount /> },
+            { label: 'tiến độ học', value: <ProgressPercent />, accent: true },
           ].map((metric) => (
             <div
               key={metric.label}
@@ -112,7 +108,6 @@ export default function Home() {
               <span
                 className={cn(
                   'text-lg font-medium tabular-nums',
-                  metric.mono && 'font-mono text-xs-plus',
                   metric.accent && 'text-[color:var(--accent)]'
                 )}
               >
@@ -132,9 +127,7 @@ export default function Home() {
           >
             <div className="flex max-w-2xl flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Badge variant="default" className="font-mono">
-                  done
-                </Badge>
+                <LessonStatusBadge id="1-1" />
                 <span className="font-mono text-2xs text-[color:var(--muted-foreground)]">
                   module 1 · bài 1.1
                 </span>
@@ -155,71 +148,17 @@ export default function Home() {
 
         {/* Curriculum */}
         <section className="mt-10 flex flex-col gap-4">
-          <div className="flex items-baseline justify-between gap-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h2 className="text-sm font-medium">Lộ trình 6 modules</h2>
-            <span className="font-mono text-2xs text-[color:var(--muted-foreground)]">
-              {totalLessons} bài
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-2xs text-[color:var(--muted-foreground)]">
+                tích vào ô vuông khi học xong · lưu trên máy bạn
+              </span>
+              <ResetProgressButton />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {CURRICULUM.map((mod) => {
-              const status = STATUS_LABEL[getModuleStatus(mod)];
-              const modDone = mod.lessons.filter((l) => l.status === 'completed').length;
-
-              return (
-                <div key={mod.id} className={cn(PANEL, 'flex flex-col')}>
-                  <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="font-mono text-2xs tracking-wider text-[color:var(--muted-foreground)] uppercase">
-                        module {mod.id} · tuần {mod.week} · {modDone}/{mod.lessons.length}
-                      </span>
-                      <h3 className="text-xs-plus font-medium">{mod.title}</h3>
-                    </div>
-                    <Badge variant={status.variant} className="shrink-0 font-mono">
-                      {status.label}
-                    </Badge>
-                  </div>
-
-                  <p className="px-4 pb-3 text-2xs leading-relaxed text-[color:var(--muted-foreground)]">
-                    {mod.description}
-                  </p>
-
-                  <Separator />
-
-                  <ul className="flex flex-col p-1.5">
-                    {mod.lessons.map((les) => (
-                      <li key={les.id}>
-                        <Link
-                          href={`/lessons/${les.id}`}
-                          className="group flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 transition-colors hover:bg-[color:color-mix(in_oklab,var(--foreground)_6%,transparent)]"
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span
-                              className={cn(
-                                'font-mono text-2xs tabular-nums',
-                                les.status === 'completed'
-                                  ? 'text-[color:var(--accent)]'
-                                  : 'text-[color:var(--muted-foreground)]'
-                              )}
-                            >
-                              {les.lessonNumber}
-                            </span>
-                            <span className="truncate text-2xs text-[color:var(--muted-foreground)] transition-colors group-hover:text-[color:var(--foreground)]">
-                              {les.title}
-                            </span>
-                          </span>
-                          <span className="shrink-0 font-mono text-2xs text-[color:color-mix(in_oklab,var(--muted-foreground)_70%,transparent)]">
-                            {les.stack === 'vanilla' ? 'vanilla' : 'r3f'}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
+          <CurriculumGrid />
         </section>
       </main>
 

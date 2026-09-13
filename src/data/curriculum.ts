@@ -1,7 +1,10 @@
 /**
- * Tiến độ học của chính bạn — tự tay đổi khi học xong một bài.
- * Đây KHÔNG phải trạng thái soạn nội dung; số bài đã soạn lấy từ
- * AUTHORED_LESSON_IDS trong `@/data/lessons`.
+ * Tiến độ học của chính bạn.
+ *
+ * `status` ở đây chỉ là MỐC KHỞI ĐẦU cho lần mở trang đầu tiên; sau đó người học
+ * tự tích trên giao diện và tiến độ nằm trong localStorage
+ * (`@/lib/lesson-progress`). Đây KHÔNG phải trạng thái soạn nội dung; số bài đã
+ * soạn lấy từ AUTHORED_LESSON_IDS trong `@/data/lessons`.
  */
 export type LessonStatus = 'completed' | 'in-progress' | 'not-started';
 
@@ -24,11 +27,10 @@ export interface Module {
   lessons: Lesson[];
 }
 
-/** Trạng thái module suy ra từ các bài bên trong — chỉ cần tích ở cấp bài. */
-export function getModuleStatus(mod: Module): LessonStatus {
-  const done = mod.lessons.filter((l) => l.status === 'completed').length;
+/** Trạng thái module suy ra từ số bài đã học bên trong — chỉ cần tích ở cấp bài. */
+export function getModuleStatus(done: number, total: number): LessonStatus {
   if (done === 0) return 'not-started';
-  return done === mod.lessons.length ? 'completed' : 'in-progress';
+  return done === total ? 'completed' : 'in-progress';
 }
 
 export const CURRICULUM: Module[] = [
